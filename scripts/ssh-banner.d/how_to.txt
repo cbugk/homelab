@@ -1,0 +1,31 @@
+Source: https://linuxconfig.org/how-to-run-script-on-startup-on-ubuntu-20-04-focal-fossa-server-desktop
+
+sudo chown root:root ./ssh_banner_header
+sudo chown root:root ./ssh_banner_footer
+sudo chown root:root ./ssh-banner.sh
+sudo chown root:root ./ssh-banner.service
+
+sudo chmod 644 ./ssh_banner_header
+sudo chmod 644 ./ssh_banner_footer
+sudo chmod 744 ./ssh-banner.sh
+sudo chmod 664 ./ssh-banner.service
+
+sudo cp ssh_banner_header  /etc/ssh/
+sudo cp ssh_banner_footer  /etc/ssh/
+sudo cp ssh-banner.sh      /usr/local/bin/
+sudo cp ssh-banner.service /etc/systemd/system/
+
+sudo systemctl daemon-reload
+sudo systemctl enable ssh-banner
+sudo systemctl start  ssh-banner
+
+# Incase one wants to rerun script manually
+sudo systemctl restart ssh-banner
+
+# To UNINSTALL
+sudo systemctl disable ssh-banner
+sudo rm /etc/ssh/ssh_banner
+sudo rm /etc/ssh/ssh_banner_header
+sudo rm /etc/ssh/ssh_footer
+sudo rm /etc/systemd/system/ssh-banner.service
+sudo rm /usr/local/bin/ssh-banner.sh

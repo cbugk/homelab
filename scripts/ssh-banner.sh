@@ -1,4 +1,5 @@
 #!/bin/sh
+# /usr/local/bin/ssh-banner.sh
 
 # Script for adding SSH Banner programmatically.
 # Designed for use within homelab vm-templates, at bootup
