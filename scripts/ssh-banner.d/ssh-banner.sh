@@ -29,7 +29,7 @@
 # Figlet of FQDN as top 2 levels substracted (e.g. ".cbk.lab")
 generate_hostname_banner()
 {
-printf  "\n$( hostname -f ) -- $( hostname -I )\n$( figlet "$(  hostname | awk -F".$( hostname | awk -F'.' '{print $(NF-1) "." $(NF)}' )" '{print $1}'  )")\n" 
+printf  "\n$( hostname -f ) -- $( hostname -I )\n$( figlet "$(  hostname -f | awk -F".$( hostname -f | awk -F'.' '{print $(NF-1) "." $(NF)}' )" '{print $1}'  )")\n" 
 }
 
 # For archiving purposes, is restrictive after adding parameters
@@ -39,10 +39,14 @@ printf  "\n$( hostname -f ) -- $( hostname -I )\n$( figlet "$(  hostname | awk -
 #	exit 1
 #fi
 
+# Imported projects defaults (initially must be ' INSTALL_DIR="/opt/ssh-banner" ' for installer)
+INSTALL_DIR="/opt/ssh-banner"
+
+
 #Defaults
-header_path="/etc/ssh/ssh_banner_header"
-banner_path="/etc/ssh/ssh_banner"
-footer_path="/etc/ssh/ssh_banner_footer"
+header_path="$INSTALL_DIR/ssh_banner_header"
+banner_path="$INSTALL_DIR/ssh_banner"
+footer_path="$INSTALL_DIR/ssh_banner_footer"
 
 #Options
 OPT_STRING=":b:f:h:"
