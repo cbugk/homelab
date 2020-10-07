@@ -41,15 +41,15 @@
 #  root@hermes:/root/
      qm importdisk 9000 /root/focal-server-cloudimg-amd64.qcow2 cephrds
 
-# Optionally delete key as no more required
+# Optionally delete image as no more required
 #  root@hermes:/root/
      rm /root/focal-server-cloudimg-amd64.qcow2
 
-# Vm template to use disk 
+# Set vm template to use disk 
 #  root@hermes:/root/
      qm set 9000 --scsihw virtio-scsi-pci --virtio0 cephrds:vm-9000-disk-0
 
-# Set serial, told it is required for Openstack cloudinit images
+# Set serial, told it is required for OpenStack cloudinit images
 #  root@hermes:/root/
      qm set 9000 --serial0 socket
 
@@ -57,7 +57,7 @@
 #  root@hermes:/root/
      qm set 9000 --vga qxl
 
-# Cloud-init configuration is handed from CD-Rom
+# Cloudinit configuration is handed from CD-Rom
 #  root@hermes:/root/
      qm set 9000 --ide2 cephrds:cloudinit
 
@@ -65,9 +65,9 @@
 #  root@hermes:/root/
      qm set 9000 --boot c --bootdisk scsi0
 
-# Acknowlegde image has qemu-agent support (aware of being a vm)
+# Acknowlegde image does not have qemu-agent support (aware of being a vm)
 #  root@hermes:/root/
-     qm set 9000 --agent 1
+     qm set 9000 --agent 0
 
 # Turn into template at last
 #  root@hermes:/root/
