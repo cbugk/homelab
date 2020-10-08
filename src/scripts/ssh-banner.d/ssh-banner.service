@@ -1,9 +1,0 @@
-# /etc/systemd/system/ssh-banner.service
-[Unit]
-After=network.service
-
-[Service]
-ExecStart=/usr/local/bin/ssh-banner.sh
-
-[Install]
-WantedBy=default.target

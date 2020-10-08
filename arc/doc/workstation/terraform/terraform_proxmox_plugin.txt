@@ -1,0 +1,53 @@
+# Documentation of terraform and proxmox plugin installation
+# Status: Depreciated (due to different errors encountered on both Windows, and GnuLinux)
+# Check Ansible docs for an alternative
+
+#-Source(s):
+#   [tag:telmate]  https://github.com/Telmate/terraform-provider-proxmox/blob/master/docs/installation.md
+
+#-Environment:
+#   Workstation: 32-bit Windows10Pro Netbook
+#     Shell: Git Bash (Admin)
+#     User: cbugra@workstation
+
+#-End-Result:
+#   GoLang installed, Terraform installed, Terraform Proxmox plugins installed [source:telmate].
+
+#-Procedure----------
+
+# Install gcc via scoop for "make" command
+# Alternatively: via choco, or manual MinGW install
+# Not necessary for Unix-like systems
+#  cbugra@workstation:/c/projects/others_repos/
+     scoop install gcc
+
+# Download and install GoLang from: https://golang.org/doc/install
+# Alternatively: via scoop, or via choco
+#  cbugra@workstation:/c/projects/others_repos/
+     git clone https://github.com/Telmate/terraform-provider-proxmox.git
+#  cbugra@workstation:/c/projects/others_repos/
+     cd terraform-provider-proxmox
+
+# Download Terraform binary, add to $PATH (trivial)
+# Suggestion: add a directory to System Path in Windows, then copy binaries over there
+#             use "/usr/local/bin" or similar for Linux
+
+# GoLang downloads quite a bit dependencies for the first time
+# Other than that might still take some time to install
+#  cbugra@workstation:/c/projects/others_repos/terraform-provider-proxmox
+     go install github.com/Telmate/terraform-provider-proxmox/cmd/terraform-provider-proxmox
+#  cbugra@workstation:/c/projects/others_repos/terraform-provider-proxmox
+     go install github.com/Telmate/terraform-provider-proxmox/cmd/terraform-provisioner-proxmox
+#  cbugra@workstation:/c/projects/others_repos/terraform-provider-proxmox
+     make
+
+# Copy executables compiled (due to glitch in Git Bash, better to ls -la afterwards)
+#  user@workstation:/c/projects/others_repos/terraform-provider-proxmox
+     mkdir -p /c/Users/cbugra/AppData/Roaming/terraform.d/plugins
+#  user@workstation:/c/projects/others_repos/terraform-provider-proxmox
+     cp bin/terraform-provider-proxmox /c/Users/cbugra/AppData/Roaming/terraform.d/plugins
+     cp bin/terraform-provisioner-proxmox /c/Users/cbugra/AppData/Roaming/terraform.d/plugins
+#  user@workstation:/c/projects/others_repos/terraform-provider-proxmox
+     ls -la /c/Users/cbugra/AppData/Roaming/terraform.d/plugins
+
+#-Procedure-End------

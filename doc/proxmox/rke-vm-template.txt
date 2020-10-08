@@ -118,6 +118,7 @@ EOF
          cat /dev/null > ~/.bash_history && history -c && exit
 
     # Download RKE binary
+    # Check version from [ https://github.com/rancher/rke/releases ]
     #  ubuntu@rke-base-template:/home/ubuntu/
          wget https://github.com/rancher/rke/releases/download/v1.2.0/rke_linux-amd64
 
