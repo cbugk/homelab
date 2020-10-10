@@ -1,0 +1,264 @@
+# Documentation for setting up 3-node Proxmox 6.2 cluster
+
+#-Source(s):
+#   [tag:proxmox-buster]  https://pve.proxmox.com/wiki/Install_Proxmox_VE_on_Debian_Buster
+#   [tag:hostname-resolv] https://forum.proxmox.com/threads/how-do-nodes-resolve-other-nodes-hostname.27847/
+
+#-Environment:
+#   workstation:
+#     model: "Samsung NC10"
+#     drive0: /dev/sda #SSD-250GB-Evo860
+#     system: Antix_x86
+#     user: cbugra@workstation
+#   proxmox-cluster:
+#     domain: pve.cbk.lab
+#     nodes:
+#     - apollo:
+#         model: "Acer Aspire v3-371"
+#         other_systems: []
+#         installer: proxmox6.2.iso
+#         uefi: true
+#         lvm: true
+#         drive0: /dev/sdb #Usb3-16gb-KingstonDT50
+#         drive1: /dev/sda #SSHD-500GB-Seagate
+#     - hermes:
+#         model: "HP Probook 450 G2"
+#         other_systems: [win10, xubuntu2004]
+#         installer: debian_buster_standard_nonfree.iso
+#         uefi: true
+#         lvm: false
+#         drive0: /dev/sda #HDD-320GB-WDBlack
+#         drive1: /dev/sdb #SSHD-1TB-Seagate
+#     - triton:
+#         model: "Toshiba Satellite L830-127"
+#         other_systems: []
+#         installer: proxmox6.2.iso
+#         uefi: false
+#         lvm: true
+#         drive0: /dev/sda #HDD-160GB-Samsung
+#         drive1: /dev/sdb #HDD-500GB-Toshiba 
+
+#-End-Result:
+#   Proxmox 6.2 Cluster
+#     Nodes: [ apollo, hermes, triton ]
+#     Domain: pve.cbk.lab
+#     Storage: [ CephFS: cephfs, RADOS: cephrds ]
+
+#-Prerequisites----------
+
+# Download ISO images
+#  Debian Buster non-free standard live
+#    image_used: http://cdimage.debian.org/cdimage/unofficial/non-free/cd-including-firmware/10.6.0-live+nonfree/amd64/iso-hybrid/debian-live-10.6.0-amd64-standard+nonfree.iso
+#  Proxmox 6.2-1
+#    image_used: https://www.proxmox.com/en/downloads/item/proxmox-ve-6-2-iso-installer
+
+# Write to disk, Rufus [ https://rufus.ie ] was used
+# For Proxmox, dd is enough (use dd method in rufus as well)
+#  balenaEtcher can also be used.
+# For Debian, see their documentation or StackOverflow
+
+#-Procedure----------
+
+# Apollo
+#   Installation:
+#    Select "Install Proxmox VE"
+#    Acceppt licence
+#    Select "Target Harddisk: /dev/sdc"  (installer usb registers as /dev/sdb)
+#      Filesystem: ext4
+#      swapsize: 0
+#      maxroot:  [leave blank]
+#      minfree:  0
+#      minvz:    0
+#      Ok
+#    Country: Turkey
+#      Timezone: Istanbul
+#      Keyboard: US-English
+#      Next
+#    Enter password (twice)
+#      mail: root@apollo.pve.cbk.lab
+#      Next
+#    Select ethernet: enp1s0
+#      FQDN:    apollo.pve.cbk.lab
+#      IP Addr: 192.168.1.251
+#      Netmask: 255.255.255.0
+#      Gateway: 192.168.1.1
+#      DNS:     192.168.1.2
+#      Next
+#    Install, reboot
+#    #Ready for WebUI
+#    #Ready for cluster
+
+# Triton
+#   Installation:
+#    Select "Install Proxmox VE"
+#    Acceppt licence
+#    Select "Target Harddisk: /dev/sda"
+#      Filesystem: ext4
+#      swapsize: 8
+#      maxroot:  32
+#      minfree:  16
+#      minvz:    [leave blank]
+#      Ok
+#    Country: Turkey
+#      Timezone: Istanbul
+#      Keyboard: US-English
+#      Next
+#    Enter password (twice)
+#      mail: root@triton.pve.cbk.lab
+#      Next
+#    Select ethernet: enp9s0
+#      FQDN:    triton.pve.cbk.lab
+#      IP Addr: 192.168.1.253
+#      Netmask: 255.255.255.0
+#      Gateway: 192.168.1.1
+#      DNS:     192.168.1.2
+#      Next
+#    Install, reboot
+#    #Ready for WebUI
+#    #Ready for cluster
+
+# Hermes
+#   Defaults will be used, for the sake of not falling into localization pithole.
+#   Customize at your own risk, keyboard layout is the only exception.
+#   System Installation:
+#     Select "Debian Installer"
+#     "English-English"
+#     "United States"
+#     "American English"
+#     Select ethernet: enp8s0
+#     Hostname: hermes
+#     Domain: pve.cbk.lab #it is observed to be still overwritten by DNS server
+#     Provide password (twice)
+#     FullName: cbkadm
+#     username: cbkadm
+#     Provide password (twice)
+#     TimeZone: Eastern
+#     Partitioning: manual
+#       #Drive0 had free space at the end for root and swap, and ESP at /dev/sda1
+#       #Drive1 might be a previous ceph disk, clear using "Configure the Logical Volume Manager"
+#       #encryption was not desired, nor previously setup
+#       End-Result:
+#         /dev/sda1: #automatically set, not edited
+#           name: "EFI system partition"
+#           use-as: "EFI System Partition"
+#           bootable-flag: on
+#         /dev/sda6:
+#           name: buster-root
+#           size: 32.8GB 
+#           use-as: ext4
+#           format: yes
+#           mount-point: /
+#           # leave other options as default
+#         /dev/sda7:
+#           name: swappy
+#           size: 4.1GB
+#           use-as: swap area
+#     Finish partitioning and write changes to disk
+#     # Hereafter is written from memory, will be edited when reinstalled 
+#     Network mirror: Turkey
+#     Repository: ftp.tr.debian.org
+#     Reboot
+#   Proxmox Installation: [source:proxmox-buster]
+#     Login
+#     Install OpenSSH Server, Editor, wget and curl (just in case)
+       apt update && apt install -y openssh-server vim nano wget curl
+#     Edit host IP
+        vim /etc/hosts #sample is bellow
+#         #start-verbatim
+#         127.0.0.1       localhost
+#         192.168.1.252   hermes.pve.cbk.lab      hermes
+#         #end-verbatim
+        hostname --ip-address # should return 192.168.1.252
+      echo "deb http://download.proxmox.com/debian/pve buster pve-no-subscription" > /etc/apt/sources.list.d/pve-install-repo.list
+      wget http://download.proxmox.com/debian/proxmox-ve-release-6.x.gpg -O /etc/apt/trusted.gpg.d/proxmox-ve-release-6.x.gpg
+      apt update && apt -y full-upgrade            #takes awhile
+      apt install -y proxmox-ve postfix open-iscsi #takes awhile
+#     #Ready for WebUI
+      apt remove os-prober
+#     Set default "vmbr0" linux bridge, either from WebUI or below example (former is suggested)
+        vim /etc/network/interfaces #sample is below
+#         #start-verbatim:
+#         source /etc/network/interfaces.d/*
+#         
+#         auto lo
+#         iface lo inet loopback
+#         
+#         iface enp8s0 inet manual #previously was dhcp 
+#         
+#         auto vmbr0
+#         iface vmbr0 inet static
+#                 address 192.168.1.252/24
+#                 gateway 192.168.1.1
+#                 bridge-ports enp8s0
+#                 bridge-stp off
+#                 bridge-fd 0
+#         #end-verbatim
+#     Set DNS server and domain, so that hostnames are resolvable
+#     # [source:hostname-resolv]
+        vim /etc/resolv.conf #sample below
+#         #start-verbatim
+#         search pve.cbk.lab
+#         nameserver 192.168.1.2
+#         #end-verbatim
+#     reboot
+#     # At this point, check your node is accessible (physically, via ping, via switch console, etc.)
+#     apt remove -y linux-image-amd64 'linux-image-4.19*'
+#     update-grub
+#     reboot
+#     #Ready for cluster
+
+# Setup the Cluster
+  # Accept Risk and Continue into self signed management pages, when necessary
+
+  # Create Cluster (triton)
+  Visit https://triton.pve.cbk.lab:8006
+  Login (user: root, passwd: <from installation>)
+  @LeftPane "Server View" -> "Folder View" from drop-down
+  @LeftPane "Datacenter" -> @InnerLeftPane "Cluster" -> @MainView "Create Cluster"
+  @MainView "Join Information" -> "Copy Information" -> CloseDialog
+
+  # Join to Cluster (apollo, hermes)
+  Visit https://apollo.pve.cbk.lab:8006
+  Login (user: root, passwd: <from installation>)
+  @LeftPane ClickOn "Server View" -> Select "Folder View" from drop-down
+  @LeftPane ClickOn "Datacenter" -> @InnerLeftPane ClickOn "Cluster" -> "Join Cluster" ->
+  Paste (copy info from triton) -> Provide root password of triton -> "Join"
+  # Web page will reissue its TLS certificate, reload should fix the freeze
+  # Not to reload too early, check if node apollo is visible from triton's WebUI.
+  Repeat for https://hermes.pve.cbk.lab:8006
+
+# CephRBD and CephFS
+  # For all nodes do
+  @LeftPane Datacenter+Nodes+<node> -> @InnerLeftPane Ceph -> NotInstalledInfoBox -> InstallationDialog
+  # For very first encounter, configuration must be set (defaults are good enough for single ethernet NIC laptops)
+
+  # Note that, OSD are only visible when active manager node is selected from LeftPane.
+  # Altough not convinient, is not a problem.
+  #For all nodes do
+  @LeftPane Datacenter+Nodes+<node> -> @InnerLeftPane Ceph+Monitor ->
+    Create Manager <node>
+    Create Monitor <node>
+  @LeftPane Datacenter+Nodes+<node> -> @InnerLeftPane Ceph+OSD ->
+    # If disk not auto-selected, ssh into <node>, identify disk via `lsblk` (e.g. /dev/sdX)
+    # then `ceph-volume lvm zap --destroy /dev/sdX`
+    Create OSD (dialog pops) -> Disk: (auto-selected) -> Create
+
+  # CepRBD 
+    # From any node do
+    @InnerLeftPane Ceph+Pools --> Create (dialog pops) -> Create #with below config
+      "Name:cephrbd, Size:3, MinSize:2, CrushRule:replicated_rule, pg_num:64, addAsStorage:yes"
+
+  # CephFS
+    # From any node do
+    @InnerLeftPane Ceph+CephFS -> Metadata Servers -> Create <for-all-nodes> (dialog pops) #all should be "up:standby"
+    @InnerLeftPane Ceph+CephFS -> Create CephFS (dialog pops) -> Create #with below config -> CloseDialog
+      "Name:cephfs, PlacementGroups:64, addAsStorage:yes" #should create pools "cephfs"(pg64) and "cephfs_metadata"(pg:16)  
+
+  Check ceph pools exist  @InnerLeftPane Ceph+Pools
+        storages created  @LeftPane Storage
+        ceph status       @InnerLeftPane Ceph
+
+    
+
+  
+  
