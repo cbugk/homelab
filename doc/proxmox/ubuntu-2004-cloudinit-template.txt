@@ -11,9 +11,10 @@
 #   Proxmox 6.2 Cluster
 #     Nodes: [ apollo, hermes, triton ]
 #     Domain: pve.cbk.lab
-#     Storage: [ CephFS: cephfs, RADOS: cephrds ]
+#     Storage: [ CephFS: cephfs, RADOS: cephrbd ]
 
 #-End-Result:
+#   Official cloud-init image for Ubuntu_20.04 is uploaded to CephRBD.
 
 #-Procedure----------
 
@@ -39,7 +40,7 @@
 
 # Import .qcow2 image as disk
 #  root@hermes:/root/
-     qm importdisk 9000 /root/focal-server-cloudimg-amd64.qcow2 cephrds
+     qm importdisk 9000 /root/focal-server-cloudimg-amd64.qcow2 cephrbd
 
 # Optionally delete image as no more required
 #  root@hermes:/root/
@@ -47,7 +48,7 @@
 
 # Set vm template to use disk 
 #  root@hermes:/root/
-     qm set 9000 --scsihw virtio-scsi-pci --virtio0 cephrds:vm-9000-disk-0
+     qm set 9000 --scsihw virtio-scsi-pci --virtio0 cephrbd:vm-9000-disk-0
 
 # Set serial, told it is required for OpenStack cloudinit images
 #  root@hermes:/root/
@@ -59,7 +60,7 @@
 
 # Cloudinit configuration is handed from CD-Rom
 #  root@hermes:/root/
-     qm set 9000 --ide2 cephrds:cloudinit
+     qm set 9000 --ide2 cephrbd:cloudinit
 
 # Set boot order (boot disk only)
 #  root@hermes:/root/
