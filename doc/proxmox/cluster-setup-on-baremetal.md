@@ -1,11 +1,9 @@
 # Setting Proxmox 6.2 Cluster Up
 
 ## Source(s)
+[proxmox-buster](https://pve.proxmox.com/wiki/Install_Proxmox_VE_on_Debian_Buster)
 
-   [proxmox-buster](https://pve.proxmox.com/wiki/Install_Proxmox_VE_on_Debian_Buster)
-
-   [hostname-resolv](https://forum.proxmox.com/threads/how-do-nodes-resolve-other-nodes-hostname.27847/)
-
+[hostname-resolv](https://forum.proxmox.com/threads/how-do-nodes-resolve-other-nodes-hostname.27847/)
 ## Environment
     workstation:
       model: "Samsung NC10"
@@ -41,7 +39,7 @@
           drive1: /dev/sdb #HDD-500GB-Toshiba 
 
 ## End Result
-    Proxmox 6.2 Cluster
+    Proxmox 6.2 Cluster:
       Nodes: [ apollo, hermes, triton ]
       Domain: pve.cbk.lab
       Storage: [ CephFS: cephfs, RBD: cephrbd ]
@@ -56,7 +54,7 @@
 ### Write to disk
 [Rufus](https://rufus.ie) was used.
 
-For Proxmox, [dd](https://linux.die.net/man/1/dd) is enough (use dd method in rufus as well)
+For Proxmox, [dd](https://linux.die.net/man/1/dd) is enough (use dd method in Rufus as well)
 
 For Debian, see their [documentation](https://www.debian.org/releases/stable/installmanual) or StackOverflow for other than Rufus.
 
@@ -103,10 +101,12 @@ For Debian, see their [documentation](https://www.debian.org/releases/stable/ins
 \#Ready for cluster
 
 Disable logging in an effort to not shorten Usb drive's life
-
-`systemctl stop rsyslog`
-
-`systemctl disable rsyslog`
+```console
+systemctl stop rsyslog
+```
+```console
+systemctl disable rsyslog
+```
 
 ### Triton
 ####   Installation:
@@ -165,10 +165,9 @@ Customize at your own risk, keyboard layout is the only exception.
     - Provide password (twice)
 - Time Zone: `Eastern`
 - Partitioning: `manual`
-    > \# Drive0 had free space at the end for root and swap, and ESP at /dev/sda1
-      # Drive1 might be a previous ceph disk, clear using `Configure the Logical Volume Manager`
-      # Encryption was not desired, nor previously setup
-
+\# Drive0 had free space at the end for root and swap, and ESP at /dev/sda1
+\# Drive1 might be a previous ceph disk, clear using `Configure the Logical Volume Manager`
+\# Encryption was not desired, nor previously setup
     - /dev/sda1: # automatically set, not edited
         - Name: `EFI system partition`
         - Use as: `EFI System Partition`
@@ -194,53 +193,90 @@ Customize at your own risk, keyboard layout is the only exception.
 
 #### Proxmox Installation: [proxmox-buster]
 - Login as `root`
+- Remove Non-priviledged user
+    ```console
+    deluser cbkadm && rm -r /home/cbkadm
+    ```
 - Install OpenSSH Server, Editor, wget and curl (just in case)
-    - `apt update && apt install -y openssh-server vim nano wget curl`
+    ```console
+    apt update && apt install -y openssh-server vim nano wget curl
+    ```
 - Enable root login
-    - `echo "PermitRootLogin yes" >> /etc/ssh/sshd_config`
+    ```console
+    echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+    ```
 - Edit host IP
-    - `vim /etc/hosts` \# sample is bellow
-        >127.0.0.1       localhost
-
-        >192.168.1.252   hermes.pve.cbk.lab      hermes
-    - `hostname --ip-address` # should return 192.168.1.252
+    ```console
+    vim /etc/hosts # sample is bellow
+    ```
+    ```text
+    127.0.0.1       localhost
+    192.168.1.252   hermes.pve.cbk.lab      hermes
+    ```
+    ```console
+    hostname --ip-address # should return 192.168.1.252
+    ```
 - Add repo
-    - `echo "deb http://download.proxmox.com/debian/pve buster pve-no-subscription" > /etc/apt/sources.list.d/pve-install-repo.list`
-    - `wget http://download.proxmox.com/debian/proxmox-ve-release-6.x.gpg -O /etc/apt/trusted.gpg.d/proxmox-ve-release-6.x.gpg`
-    - `apt update && apt -y full-upgrade` \# takes awhile
-    - `apt install -y proxmox-ve postfix open-iscsi` \# takes awhile
-\#Ready for WebUI
-    - `apt remove os-prober`
+    ```console
+    echo "deb http://download.proxmox.com/debian/pve buster pve-no-subscription" > /etc/apt/sources.list.d/pve-install-repo.list
+    ```
+    ```console
+    wget http://download.proxmox.com/debian/proxmox-ve-release-6.x.gpg -O /etc/apt/trusted.gpg.d/proxmox-ve-release-6.x.gpg
+    ```
+    ```console
+    apt update && apt -y full-upgrade # takes awhile
+    ```
+    ```console
+    apt install -y proxmox-ve postfix open-iscsi # takes awhile
+    ```
+    \#Ready for WebUI
+    ```console
+    apt remove os-prober
+    ```
 - Set default `vmbr0` linux bridge, either from WebUI or below example (former is suggested)
-    - `vim /etc/network/interfaces` \# sample is below
-        >source /etc/network/interfaces.d/*
-        >         
-        >auto lo
-        >iface lo inet loopback
-        > 
-        >iface enp8s0 inet manual #previously was dhcp 
-        > 
-        >auto vmbr0
-        >iface vmbr0 inet static
-        >        address 192.168.1.252/24
-        >        gateway 192.168.1.1
-        >        bridge-ports enp8s0
-        >        bridge-stp off
-        >        bridge-fd 0
+    ```console
+    vim /etc/network/interfaces # sample is below
+    ```
+    ```text
+    source /etc/network/interfaces.d/*
+    
+    auto lo
+    iface lo inet loopback
+    
+    iface enp8s0 inet manual #previously was dhcp 
+    
+    auto vmbr0
+    iface vmbr0 inet static
+        address 192.168.1.252/24
+        gateway 192.168.1.1
+        bridge-ports enp8s0
+        bridge-stp off
+        bridge-fd 0
+    ```
 - Set DNS server and domain, so that hostnames are resolvable  [hostname-resolv]
-    - vim /etc/resolv.conf \# sample below
-        >search pve.cbk.lab
-        >nameserver 192.168.1.2
+    ```console
+    vim /etc/resolv.conf # sample is below
+    ```
+    ```text
+    search pve.cbk.lab
+    nameserver 192.168.1.2
+    ```
+
 - Reboot
 \# At this point, check your node is accessible (physically, via ping, via switch console, etc.)
 - Remove old kernel
-    - `apt remove -y linux-image-amd64 'linux-image-4.19*'`
-    - `update-grub`
+    ```console
+    apt remove -y linux-image-amd64 'linux-image-4.19*'
+    ```
+    ```console
+    update-grub
+    ```
 - Reboot
 \# Ready for cluster
 
 ## Setup the Cluster
-\# `Accept Risk and Continue` or `Continue Anyway` into self-signed management dashboards, when necessary.
+\# TODO: add images to clearify.
+\# When necessary, choose `Accept Risk and Continue` or `Continue Anyway` to self-signed management dashboard.
 
 ### Create Cluster (apollo)
 - Visit `https://apollo.pve.cbk.lab:8006`
@@ -252,8 +288,6 @@ Customize at your own risk, keyboard layout is the only exception.
 - @LeftPane `Datacenter` -> @InnerLeftPane `Cluster` -> @MainView `Create Cluster`
 - @MainView `Join Information` -> `Copy Information` -> CloseDialog
 
-TODO add images
-
 ### Join to Cluster (hermes, triton)
 - Visit `https://hermes.pve.cbk.lab:8006`
 - Login
@@ -261,11 +295,11 @@ TODO add images
     - Password: `cbkcloud`
     - Realm: `Linux PAM`
 - @LeftPane ClickOn `Server View` -> Select `Folder View` from drop-down
-- @LeftPane ClickOn `Datacenter` -> @InnerLeftPane ClickOn `Cluster` -> `Join Cluster` ->  Paste (copy info from `apollo`) -> Provide root password of `apollo` -> `Join`
+- @LeftPane ClickOn `Datacenter` -> @InnerLeftPane ClickOn `Cluster` -> `Join Cluster` -> Paste (copy info from `apollo`) -> Provide root password of `apollo` -> `Join`
 
 \# Web page will reissue its TLS certificate, reload should fix the freeze
 
-\# Not to reload too early, check if node apollo is visible from `apollo`'s WebUI.
+\# Not to reload too early, check if node `hermes` is visible from `apollo`'s WebUI.
 
 Repeat for `https://triton.pve.cbk.lab:8006`
 
@@ -276,9 +310,9 @@ Repeat for `https://triton.pve.cbk.lab:8006`
 \# For very first encounter, configuration must be set (defaults are good enough for single ethernet NIC laptops)
 
 
-\# Note that, OSD are only visible when active manager node is selected from LeftPane.
+\# Note that, OSDs are only visible when active manager node is selected from LeftPane.
 
-\# Altough not convinient, is not a problem.
+\# Altough inconvinient, that is not a problem.
 
 \#For all nodes do
 - @LeftPane `Datacenter`+`Nodes`+`<node>` -> @InnerLeftPane `Ceph`+`Monitor` ->
@@ -287,9 +321,10 @@ Repeat for `https://triton.pve.cbk.lab:8006`
 - @LeftPane `Datacenter`+`Nodes`+`<node>` -> @InnerLeftPane `Ceph`+`OSD` ->
     `Create OSD` (dialog pops) -> Disk: (auto-selected) -> `Create`
 
-\# If disk not auto-selected, ssh into <node>, identify disk via `lsblk` (e.g. /dev/sdX)
-
-\# then `ceph-volume lvm zap --destroy /dev/sdX`
+\# If disk is not auto-selected, ssh into `<node>`, identify disk via `lsblk` (e.g. /dev/sdX), then
+```console
+ceph-volume lvm zap --destroy /dev/sdX
+```
 
 ### CepRBD
 \# From any node do (once)
@@ -305,8 +340,8 @@ Repeat for `https://triton.pve.cbk.lab:8006`
 \# From any node do for all nodes
 - @InnerLeftPane `Ceph`+`CephFS` -> `Metadata Servers` -> `Create` (dialog pops)
 
-\# all should be `up:standby`
-- @InnerLeftPane `Ceph`+`CephFS` -> `Create CephFS` (dialog pops) -> `Create` #with below config -> CloseDialog
+    \# All metadata servers should be `up:standby`
+- @InnerLeftPane `Ceph`+`CephFS` -> `Create CephFS` (dialog pops) -> `Create`
     - Name: `cephfs`
     - Placement Groups: `64`
     - Add as Storage: `yes`
@@ -317,8 +352,4 @@ Repeat for `https://triton.pve.cbk.lab:8006`
 - Ceph pools exist @InnerLeftPane `Ceph`+`Pools`
 - Storages created  @LeftPane `Storage`
 - Ceph status       @InnerLeftPane `Ceph`
-
-    
-
-  
-  
+ 
