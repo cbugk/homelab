@@ -1,7 +1,8 @@
 # Creating a Template for RKE VMs
+This is the initial enchanced cloudinit image for RKE, in which necessary OS tweaks are performed and binaries installed. For template which has docker images prepulled, see: [temp-rke-prepulled-docker](./temp-rke-prepulled-docker.md).
 
 ## Prerequisite(s)
-[ubuntu-2004-cloudinit-template](./ubuntu-2004-cloudinit-template.md)
+- [temp-ubuntu-2004-cloudinit](./temp-ubuntu-2004-cloudinit.md)
 
 ## Source(s)
 - [brandStetter](https://norocketscience.at/deploy-proxmox-virtual-machines-using-cloud-init/)
@@ -18,17 +19,17 @@
     Proxmox_Cluster:
       Nodes: [ apollo, hermes, triton ]
       Domain: pve.cbk.lab
-      Storage: [ CephFS: cephfs, RADOS: cephrds ]
+      Storage: [ CephFS: cephfs, RBD: cephrds ]
       VMs:
       - 9000:
         template: true
-        name: ubuntu-2004-cloudinit-template
+        name: temp-ubuntu-2004-cloudinit
 
 ## End Result
-RKE node (id: 9001), with required packages/binaries/images installed and virtual hardware specified.
+RKE vm template (id: 9001), with required packages/binaries installed and virtual hardware specified.
 
 ## Procedure
-
+> You can use the [terraform file](../../src/terraform/temp-rke-prepared-os/temp-rke-prepared-os.tf) to deploy a vm and proceed thereon. However, below method is recommended, for those also deploying [temp-rke-prepulled-docker](./temp-rke-prepulled-docker.md).
 - Create cluster-wide public key directory
     ```console
     cbugra@workstation:/depot/ssh_keys/rke_vm$
@@ -48,7 +49,7 @@ RKE node (id: 9001), with required packages/binaries/images installed and virtua
     - Clone template to further configure (full clone)
         ```console
         root@hermes:/root#
-        qm clone 9000 9001 --name rke-base-template --full 1
+        qm clone 9000 9001 --name temp-rke-prepared-os --full 1
         ```
     - Set ssh authentication from uploaded public key
         ```console
@@ -60,18 +61,20 @@ RKE node (id: 9001), with required packages/binaries/images installed and virtua
         root@hermes:/root#
         qm set 9001 --cores 2 --memory 4096
         ```
-    - Enable dhcp (supported) or optionally set static-ip (if you know what you are doing)
+    - Set static-ip for initial config, later DHCP will be enabled.
+        > Substitude for `192.168.1.91/24` a CIDR fit to your network or use DHCP and find out ip address externally.
         ```console
         root@hermes:/root#
-        qm set 9001 --ipconfig0 ip=dhcp
-        # qm set 9001 --ipconfig0 ip=192.168.1.91/24,gw=192.168.1.1
+        qm set 9001 --ipconfig0 ip=192.168.1.91/24,gw=192.168.1.1
+        # qm set 9001 --ipconfig0 ip=dhcp
         ```
-    \# Note that, setting default user requires snippet support on a volume
+    > Note that, setting default user requires snippet support on a volume
 
-    \# User is not configured as of now, default user is `ubuntu`.
+    > User is not configured as of now, default user is `ubuntu`.
+
 
     - Start VM (not a template yet)
-        \# You are advised to check options on GUI beforehand, update as you wish via GUI/CLI
+        > You are advised to check options on GUI beforehand, update as you wish via GUI/CLI
         ```console
         root@hermes:/root#
         qm start 9001
@@ -82,53 +85,52 @@ RKE node (id: 9001), with required packages/binaries/images installed and virtua
         exit
         ```
 - Enter into vm
-    ```cbugra@workstation:/depot/ssh_keys/rke_vm$
+    ```console
+    cbugra@workstation:/depot/ssh_keys/rke_vm$
     ssh -i ./rke_vm.ssh ubuntu@192.168.1.91
     ```
     - Obligatory apt update/upgrade
         ```console
-        ubuntu@rke-base-template:/home/ubuntu$
-        sudo apt update && sudo apt upgrade
+        ubuntu@temp-rke-prepared-os:/home/ubuntu$
+        sudo apt update && sudo apt upgrade -y
         ```
     - Install Qemu Agent
         ```console
-        ubuntu@rke-base-template:/home/ubuntu$
-        sudo apt install qemu-guest-agent
+        ubuntu@temp-rke-prepared-os:/home/ubuntu$
+        sudo apt install -y qemu-guest-agent
         ```
     - Install DockerCE [dockerce]
         - Setup repository
             ```console
-            ubuntu@rke-base-template:/home/ubuntu$
+            ubuntu@temp-rke-prepared-os:/home/ubuntu$
             sudo apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common
             ```
             ```console
-            ubuntu@rke-base-template:/home/ubuntu$
+            ubuntu@temp-rke-prepared-os:/home/ubuntu$
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
             ```
             ```console
-            ubuntu@rke-base-template:/home/ubuntu$
+            ubuntu@temp-rke-prepared-os:/home/ubuntu$
             sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
             ```
         - Install packages (might need to install a specific version)
             ```console
-            ubuntu@rke-base-template:/home/ubuntu$
+            ubuntu@temp-rke-prepared-os:/home/ubuntu$
             sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io
             ```
-    - Prepare RKE to installation [source:rke-prep-os,kubevirt-crio]
+    - Prepare RKE to installation [rke-prep-os,kubevirt-crio]
         ```console
-        ubuntu@rke-base-template:/home/ubuntu$
+        ubuntu@temp-rke-prepared-os:/home/ubuntu$
         sudo usermod -aG docker $USER
         ```
     - Activate and enable modules on kernel
-        \# following modules could not be found, thus removed
-
-        \# (nt_conntrack_ipv4, nf_nat_ipv4), nf_nat_masquerade_ipv4)
+        > Following modules could not be found, thus removed: (nt_conntrack_ipv4, nf_nat_ipv4), nf_nat_masquerade_ipv4)
         ```console
-        ubuntu@rke-base-template:/home/ubuntu$
+        ubuntu@temp-rke-prepared-os:/home/ubuntu$
         sudo su
         ```
         ```console
-        root@rke-base-template:/home/ubuntu#
+        root@temp-rke-prepared-os:/home/ubuntu#
         for module in br_netfilter ip6_udp_tunnel ip_set ip_set_hash_ip ip_set_hash_net iptable_filter iptable_nat iptable_mangle iptable_raw nf_conntrack_netlink nf_conntrack nf_defrag_ipv4 nf_nat nfnetlink udp_tunnel veth vxlan x_tables xt_addrtype xt_conntrack xt_comment xt_mark xt_multiport xt_nat xt_recent xt_set  xt_statistic xt_tcpudp; do
             if ! lsmod | grep -q $module; then
                 modprobe $module && echo $module > /etc/modules-load.d/$module.conf;
@@ -136,47 +138,48 @@ RKE node (id: 9001), with required packages/binaries/images installed and virtua
         done
         ```
         ```console
-        root@rke-base-template:/home/ubuntu#
+        root@temp-rke-prepared-os:/home/ubuntu#
         cat > /etc/sysctl.d/99-rke.conf << EOF
-net.bridge.bridge-nf-call-iptables  = 1
-net.ipv4.ip_forward                 = 1
-net.bridge.bridge-nf-call-ip6tables = 1
-EOF
+        net.bridge.bridge-nf-call-iptables  = 1
+        net.ipv4.ip_forward                 = 1
+        net.bridge.bridge-nf-call-ip6tables = 1
+        EOF
         ```
         ```console
-        root@rke-base-template:/home/ubuntu#
+        root@temp-rke-prepared-os:/home/ubuntu#
         echo "AllowTcpForwarding yes" >> /etc/ssh/sshd_config
         ```
     - Erase history for `root`
         ```console
-        root@rke-base-template:/home/ubuntu#
+        root@temp-rke-prepared-os:/home/ubuntu#
         cat /dev/null > ~/.bash_history && history -c && exit
         ```
-
     - Download RKE binary
-    \# Check version from [ https://github.com/rancher/rke/releases ]
+        > Check version from [github.com/rancher/rke/releases](https://github.com/rancher/rke/releases)
+
         ```console
-        ubuntu@rke-base-template:/home/ubuntu$
+        ubuntu@temp-rke-prepared-os:/home/ubuntu$
         wget https://github.com/rancher/rke/releases/download/v1.2.0/rke_linux-amd64
         ```
         - Rename, make executable, and move into Path
         ```console
-        ubuntu@rke-base-template:/home/ubuntu$
+        ubuntu@temp-rke-prepared-os:/home/ubuntu$
         mv ./rke_linux-amd64 ./rke && chmod +x ./rke && sudo mv ./rke /usr/local/bin/
         ```
-    - Download Kubectl (version 1.19)
-    \# You should not need to download onto base image, but onto workstation. This is chosen instead of installing on a x86 workstation, for convenience only.
+    - Download Kubectl (version 1.19) (not recommended)
+
+        > You should not need to download onto base image, but onto workstation. This is chosen instead of installing on a x86 workstation, for convenience only.
         ```console
-        ubuntu@rke-base-template:/home/ubuntu$
+        ubuntu@temp-rke-prepared-os:/home/ubuntu$
         curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl
         ```
         ```console
-        ubuntu@rke-base-template:/home/ubuntu$
+        ubuntu@temp-rke-prepared-os:/home/ubuntu$
         chmod +x ./kubectl && sudo mv ./kubectl /usr/local/bin/kubectl
         ```
     - Exit from vm and Erase history for `ubuntu`
         ```console
-        ubuntu@rke-base-template:/home/ubuntu$
+        ubuntu@temp-rke-prepared-os:/home/ubuntu$
         cat /dev/null > ~/.bash_history && history -c && exit
         ```
 

@@ -96,11 +96,11 @@ For Debian, see their [documentation](https://www.debian.org/releases/stable/ins
 - `Install`
 - `Reboot`.
 
-\#Ready for WebUI
+>Ready for WebUI
 
-\#Ready for cluster
+>Ready for cluster
 
-Disable logging in an effort to not shorten Usb drive's life
+- Disable logging in an effort to not shorten Usb drive's life
 ```console
 systemctl stop rsyslog
 ```
@@ -138,9 +138,9 @@ systemctl disable rsyslog
 - `Install`
 - `Reboot`
 
-\#Ready for WebUI
+>Ready for WebUI
 
-\#Ready for cluster
+>Ready for cluster
 
 ### Hermes
 
@@ -165,9 +165,12 @@ Customize at your own risk, keyboard layout is the only exception.
     - Provide password (twice)
 - Time Zone: `Eastern`
 - Partitioning: `manual`
-\# Drive0 had free space at the end for root and swap, and ESP at /dev/sda1
-\# Drive1 might be a previous ceph disk, clear using `Configure the Logical Volume Manager`
-\# Encryption was not desired, nor previously setup
+> Drive0 had free space at the end for `/` and `swap`, and ESP at `/dev/sda1`.
+
+> Drive1 might be a previous ceph disk, clear using `Configure the Logical Volume Manager`
+
+> Encryption was not desired, nor previously setup
+
     - /dev/sda1: # automatically set, not edited
         - Name: `EFI system partition`
         - Use as: `EFI System Partition`
@@ -178,7 +181,7 @@ Customize at your own risk, keyboard layout is the only exception.
         - Use as: `ext4`
         - Format: `yes`
         -  mount-point: `/`
-        - \# leave other options as default
+        > leave other options as default
     - /dev/sda7:
         - Name: `swappy`
         - Size: `4.0GB`

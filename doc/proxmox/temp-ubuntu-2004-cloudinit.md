@@ -40,7 +40,7 @@ Official cloud-init image for Ubuntu_20.04 is uploaded to CephRBD.
     - Create vm scaffold
         ```console
         root@hermes:/root#
-        qm create 9000 --name ubuntu-2004-cloudinit-template --memory 1024 --net0 virtio,bridge=vmbr0 --cores 1 --sockets 1 --cpu cputype=kvm64 -description “ubuntu-2004-cloudinit-template” --kvm 1 --numa 1
+        qm create 9000 --name temp-ubuntu-2004-cloudinit --memory 1024 --net0 virtio,bridge=vmbr0 --cores 1 --sockets 1 --cpu cputype=kvm64 -description “temp-ubuntu-2004-cloudinit” --kvm 1 --numa 1
         ```
     - Import .qcow2 image as disk
         ```console
@@ -68,7 +68,7 @@ Official cloud-init image for Ubuntu_20.04 is uploaded to CephRBD.
         qm set 9000 --vga qxl
         ```
     - Cloudinit configuration is handed from CD-Rom
-        ````console
+        ```console
         root@hermes:/root#
         qm set 9000 --ide2 cephrbd:cloudinit
         ```
