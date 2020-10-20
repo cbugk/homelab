@@ -1,16 +1,17 @@
-resource "proxmox_vm_qemu" "n03" {
-  name              = "n03"
-  target_node       = "apollo"
+resource "proxmox_vm_qemu" "node03" {
+  name              = "node03"
+  vmid              = 943
+  target_node       = "triton"
 
-  clone             = "temp-rke-prepulled-docker"
+  clone             = "temp-rke-base"
 
   agent             = 1
 
   os_type           = "cloud-init"
-  cores             = "2"
-  sockets           = "1"
+  cores             = 2
+  sockets           = 1
   cpu               = "kvm64"
-  memory            = "8192"
+  memory            = 8192
   scsihw            = "virtio-scsi-pci"
   bootdisk          = "scsi0"
 
