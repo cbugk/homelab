@@ -1,0 +1,66 @@
+#cloud-config
+
+# cbk.lab RancherOS-RKE cluster cloud-init configuration
+# for: hermes (hp450g2-laptop)
+# fields that require to be set specifically per machine are given a template value and stated as such (appended "MACH-PARAM")
+
+# RancherOS documentation can be found at the link below
+# https://rancher.com/docs/os/v1.x/en/
+# Version Matrix can be found at the link below
+# https://rancher.com/support-maintenance-terms/all-supported-versions/rancher-v2.5.1/
+
+hostname: ros01  # MACH-PARAM
+
+# ssh via rancherlab pair
+ssh_authorized_keys:
+  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC7SgCVH/yqZNlIqnOtBR3SAIE9980Wb/SwQWApo96gslqluiJUcYFDVbwc2qzD3+iA7AgeA6a4KtL48O6O2Rn4DxX6chDJoakm7/PRmVCBT8ED76wwahgbDY3v9FHVuq19yK25IE5FPLfJob0QRCQLLMioG4R8+sARD5IVpptLAxaeLyYML36j+f9hsH6ZyR7GAm51kMGc4JusV3647sFXMA/16Uokii3GlSffx97JK2CGUS2GxZmhpkn6gRjIlEJlGQBbFoYNJcm2CaP43Ai8BJ/fLW4cPegajL9qTyl4lyJIYuKaYoAJWtvqH64bbZLOAFMtIW1kWpcrhK21i5SnWxa+GXc1ELxvnZnbdIluckxTWi3zmxeOTUmLbX+R5sGm7QUt83H8y+HTjJ4qEs90K0WeG5aJbptbLcpXAGMwHAvDsbJ5T0o5CA8Wk83bo0zJUp3gK0h5cMs7ha2vcShpwZ/5ksA1oz2STNd92zybeZ6i2FZ3Ae3aFIX5vJzJXRoJiy+Fjtb0R0/d4ViDPJOIxyXcwvxYJtuQryZgef06HkGd6f0nLsoEpiOb4kWn/LYJarCYDSsQ0nTUZWZSB7KcYALeeuktNkq8RxEyS2OIklc7TN98ARu8VVInXxPBqMluduaHNVbfO9FSAxKw4SZJpt73g4q6eeEr2PHFHSVCzw== rancher@cbk.lab  # MACH-PARAM
+
+rancher:
+  console: ubuntu
+  docker:
+    engine: docker-19.03.12
+  #disable:
+    #- password
+    #- autologin
+  ssh:
+    port: 2222  # MACH-PARAM
+    #listen_address:
+      #- 192.168.1.251 # MACH-PARAM
+      #- 10.0.1.251 # MACH-PARAM
+  network:
+    dns:
+      nameservers:
+        - 192.168.1.2  # MACH-PARAM
+      search:
+        - cbk.lab  # MACH-PARAM
+    interfaces:
+      eth0:
+        vlans: 100
+        address: 192.168.1.251/24 # MACH-PARAM
+        gateway: 192.168.1.1  # MACH-PARAM
+        mtu: 1500
+        dhcp: false
+      wlan0:
+        wifi_network: network1
+    wifi_networks:
+      network1:
+        ssid: "secret-ssid"  # MACH-PARAM
+        psk: "secret-pass"  # MACH-PARAM
+        scan_ssid: 1
+        address: 10.0.1.251/24  # MACH-PARAM
+        gateway: 10.0.1.1  # MACH-PARAM
+    # for wifi write_files is used, template taken from bellow link
+    # https://gist.github.com/heri16/50706c75dd339d93ded91ba9f59e7726
+    #services_include:
+      #kernel-extras: true
+    #modules: [rtl8723be]
+  # resize_device and auto-formatted state device are expected to be the same
+  resize_device: /dev/sda  # MACH-PARAM
+  state:
+    autoformat:
+      - /dev/sda  # MACH-PARAM
+runcmd:
+  - if [ `sudo ros service list | awk '/kernel-extras/{print $1}'` != enabled ]; then ros service enable kernel-extras; fi
+  - ros service up kernel-extras
+  - modprobe rtl8723be
+
