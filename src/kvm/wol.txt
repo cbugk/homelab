@@ -1,7 +1,29 @@
+# Static IP
 sudo nmcli connection modify enp4s0 autoconnect yes
 sudo nmcli connection modify enp4s0 ipv4.addresses 192.168.0.5/24
 sudo nmcli connection modify enp4s0 ipv4.gateway 192.168.0.1
 sudo nmcli connection modify enp4s0 ipv4.dns 208.67.222.222,208.67.220.220
 sudo nmcli connection modify enp4s0 ipv4.dns-search kesik.top
-sudo ethtool enp4s0 | grep Wake-on # returned d, should become g after below command
-sudo nmcli device modify enp4s0 802-3-ethernet.wake-on-lan magic
+
+# wake-on-lan systemd service (based on )
+# File: /etc/systemd/system/wol@.service
+```
+[Unit]
+Description=Wake-on-LAN for %i
+Requires=network.target
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/ethtool -s %i wol g
+Type=oneshot
+
+[Install]
+WantedBy=multi-user.target
+```
+sudo ethtool enp4s0 | grep Wake-on # returned d, should become umbg after below command
+sudo systemctl start wol@enp4s0.service
+sudo systemctl enable wol@enp4s0.service
+
+# wake-on-lan via nmcli (not persistant)
+sudo ethtool enp4s0 | grep Wake-on # returned d, should become umbg after below command
+sudo nmcli device modify enp4s0 802-3-ethernet.wake-on-lan magic,broadcast,unicast,multicast
