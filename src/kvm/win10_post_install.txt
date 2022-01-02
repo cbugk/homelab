@@ -1,0 +1,11 @@
+# source: https://serverfault.com/questions/403561/change-amount-of-ram-and-cpu-cores-in-kvm
+sudo virsh setmaxmem simu 88GiB --config
+sudo virsh setmem simu 88GiB --config
+
+# source: https://tqdev.com/2020-kvm-network-static-ip-addresses
+sudo virsh net-update default delete ip-dhcp-range "<range start='192.168.122.2' end='192.168.122.254'/>" --live --config
+sudo virsh net-update default add ip-dhcp-range "<range start='192.168.122.100' end='192.168.122.254'/>" --live --config
+sudo virsh net-update default add-last ip-dhcp-host "<host mac='52:54:00:89:75:83' name='simu' ip='192.168.122.2'/>" --live --config
+# in case network default is not started automatically
+sudo virsh net-autostart default
+
