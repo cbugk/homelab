@@ -14,16 +14,18 @@ Requires=network.target
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/ethtool -s %i wol g
+ExecStart=/usr/bin/ethtool -s %i wol ug
 Type=oneshot
 
 [Install]
 WantedBy=multi-user.target
 ```
-sudo ethtool enp4s0 | grep Wake-on # returned d, should become umbg after below command
+sudo ethtool enp4s0 | grep Wake-on # returned d, should become ug after below command
 sudo systemctl start wol@enp4s0.service
 sudo systemctl enable wol@enp4s0.service
 
 # wake-on-lan via nmcli (not persistant)
-sudo ethtool enp4s0 | grep Wake-on # returned d, should become umbg after below command
-sudo nmcli device modify enp4s0 802-3-ethernet.wake-on-lan magic,broadcast,unicast,multicast
+sudo ethtool enp4s0 | grep Wake-on # returned d, should become ug after below command
+sudo nmcli device modify enp4s0 802-3-ethernet.wake-on-lan unicast,magic
+
+# Note: While booting or updating a windows machine on the same LAN, server was getting WOL triggered. Using Unicast and not multicast/broadcast solved the issue.
