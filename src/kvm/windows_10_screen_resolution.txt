@@ -1,0 +1,5 @@
+https://www.reddit.com/r/kvm/comments/qqbl31/windows_11_kvm_resolutution_stuck_at_800x600/
+
+https://www.spice-space.org/download.html
+
+Under Windows Binaries, downloand then install spice-guest-tools-latest.exe

@@ -1,0 +1,15 @@
+# Setup hypervisor
+sudo dnf -y install qemu-kvm libvirt virt-install
+sudo systemctl enable --now libvirtd
+sudo dnf -y install spice-server
+sudo firewall-cmd --add-port=5900-5910/tcp
+sudo firewall-cmd --runtime-to-permanent
+
+
+# Create Windows 10 VM
+virt-install --name simu --ram 8192 --disk path=/var/lib/libvirt/images/simu.img,size=48 --vcpus=24 --os-variant=win10 --network bridge=virbr0 --graphics spice,listen=0.0.0.0,password=password --video qxl --cdrom /var/lib/libvirt/isos/Win10_21H2_English_x64.iso --boot uefi
+
+# From the client (lycia)
+sudo dnf install virt-viewer
+# Connect using RemoteViewer
+spice://lydia.kesik.top:5900

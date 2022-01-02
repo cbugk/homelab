@@ -1,0 +1,7 @@
+sudo nmcli connection modify enp4s0 autoconnect yes
+sudo nmcli connection modify enp4s0 ipv4.addresses 192.168.0.5/24
+sudo nmcli connection modify enp4s0 ipv4.gateway 192.168.0.1
+sudo nmcli connection modify enp4s0 ipv4.dns 208.67.222.222,208.67.220.220
+sudo nmcli connection modify enp4s0 ipv4.dns-search kesik.top
+sudo ethtool enp4s0 | grep Wake-on # returned d, should become g after below command
+sudo nmcli device modify enp4s0 802-3-ethernet.wake-on-lan magic
