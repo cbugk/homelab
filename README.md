@@ -1,3 +1,7 @@
+> Checkout [blog](https://blog.cbugk.com) and [its repo](https://gitlab.com/cbugk/blog) repository for version 2.
+
+---
+
 # Homelab
 Its purpose is to document my bare-metal/cloud experiments, lately.
 Currently a workstation and a server (Haswell laptops both) with Centos 8.
